@@ -1,0 +1,162 @@
+﻿'use client'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+
+export default function Dashboard() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [farm, setFarm] = useState<any>(null)
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [productName, setProductName] = useState('')
+  const [productPrice, setProductPrice] = useState('')
+  const [productDesc, setProductDesc] = useState('')
+  const [productQty, setProductQty] = useState('')
+  const [message, setMessage] = useState('')
+  const [becomingFarmer, setBecomingFarmer] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) { router.push('/auth/login'); return }
+      const user = session.user
+      setUser(user)
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles').select('*').eq('id', user.id).single()
+
+      if (profileError) { console.error('Profile load error:', profileError); setLoading(false); return }
+      setProfile(profile)
+
+      if (profile?.role?.includes('farmer')) {
+        const { data: farm } = await supabase.from('farms').select('*').eq('owner_id', user.id).single()
+        if (farm) {
+          setFarm(farm)
+          const { data: products } = await supabase.from('products').select('*').eq('farm_id', farm.id)
+          setProducts(products || [])
+        }
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  async function becomeFarmer() {
+    setBecomingFarmer(true)
+    const currentRoles = profile?.role || []
+    if (!currentRoles.includes('farmer')) {
+      await supabase.from('profiles').update({ role: [...currentRoles, 'farmer'] }).eq('id', user.id)
+    }
+    router.push('/onboarding')
+  }
+
+  async function addProduct() {
+    if (!productName || !productPrice) return
+    const { error } = await supabase.from('products').insert({
+      farm_id: farm.id, name: productName, price: parseFloat(productPrice),
+      description: productDesc, quantity: parseInt(productQty) || 0,
+      active: true, is_shippable: false, needs_cold_storage: false
+    })
+    if (error) { setMessage(error.message); return }
+    setMessage('Product added!')
+    setProductName(''); setProductPrice(''); setProductDesc(''); setProductQty('')
+    const { data } = await supabase.from('products').select('*').eq('farm_id', farm.id)
+    setProducts(data || [])
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  if (loading) return <main style={{ padding: 40, fontFamily: 'Georgia, serif' }}><p>Loading...</p></main>
+
+  const isFarmer = profile?.role?.includes('farmer')
+
+  return (
+    <main style={{ padding: 40, fontFamily: 'Georgia, serif', backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <h1 style={{ color: 'var(--barn-red)' }}>{isFarmer ? 'Farmer Dashboard' : 'My Dashboard'}</h1>
+        <button onClick={handleLogout}
+          style={{ backgroundColor: 'var(--barn-red)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>
+          Logout
+        </button>
+      </div>
+      <p style={{ color: '#666', marginBottom: '1.5rem' }}>Logged in as: {user?.email}</p>
+      {message && <p style={{ color: 'green', marginBottom: '1rem' }}>{message}</p>}
+
+      {!isFarmer && (
+        <div style={{ backgroundColor: 'white', border: '2px dashed #ccc', borderRadius: '8px', padding: '2rem', textAlign: 'center', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🌾</div>
+          <h2 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Want to sell on My Farm Express?</h2>
+          <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Set up your farm storefront in minutes.</p>
+          <button onClick={becomeFarmer} disabled={becomingFarmer}
+            style={{ backgroundColor: 'var(--barn-red)', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', opacity: becomingFarmer ? 0.7 : 1 }}>
+            {becomingFarmer ? 'Setting up...' : '🚜 Become a Farmer'}
+          </button>
+        </div>
+      )}
+
+      {isFarmer && !farm && (
+        <div style={{ backgroundColor: 'white', border: '2px dashed #ccc', borderRadius: '8px', padding: '2rem', textAlign: 'center', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🏚️</div>
+          <h2 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Finish setting up your farm</h2>
+          <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.95rem' }}>You have not completed farm setup yet.</p>
+          <button onClick={() => router.push('/onboarding')}
+            style={{ backgroundColor: 'var(--barn-red)', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem' }}>
+            Complete Setup →
+          </button>
+        </div>
+      )}
+
+      {isFarmer && farm && (
+        <div>
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h2 style={{ color: 'var(--barn-red)', marginBottom: '0.25rem' }}>{farm.name}</h2>
+                <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                  Storefront: <a href={'/farm/' + farm.slug} style={{ color: 'var(--barn-red)' }}>/farm/{farm.slug}</a>
+                </p>
+              </div>
+              <button onClick={() => router.push('/edit-store')}
+                style={{ backgroundColor: '#F0C040', color: '#2C1810', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                🎨 Edit My Storefront
+              </button>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '1rem' }}>Add Product</h3>
+            {[
+              { placeholder: 'Product name', value: productName, set: setProductName },
+              { placeholder: 'Price (e.g. 4.99)', value: productPrice, set: setProductPrice },
+              { placeholder: 'Description', value: productDesc, set: setProductDesc },
+              { placeholder: 'Quantity', value: productQty, set: setProductQty },
+            ].map(({ placeholder, value, set }) => (
+              <input key={placeholder} placeholder={placeholder} value={value} onChange={e => set(e.target.value)}
+                style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+            ))}
+            <button onClick={addProduct}
+              style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+              + Add Product
+            </button>
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #eee' }}>
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '1rem' }}>Your Products ({products.length})</h3>
+            {products.length === 0 && <p style={{ color: '#888' }}>No products yet.</p>}
+            {products.map(p => (
+              <div key={p.id} style={{ border: '1px solid #eee', borderRadius: '6px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <strong>{p.name}</strong> — ${p.price} — Qty: {p.quantity}
+                {p.description && <p style={{ color: '#666', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{p.description}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </main>
+  )
+}
