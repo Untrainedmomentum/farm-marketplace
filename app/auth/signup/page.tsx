@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [roles, setRoles] = useState<string[]>([])
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -25,6 +26,10 @@ export default function SignupPage() {
 
     if (roles.length === 0) {
       setError('Please select at least one role.')
+      return
+    }
+    if (!agreedToTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy to continue.')
       return
     }
 
@@ -127,6 +132,16 @@ export default function SignupPage() {
               </div>
             ))}
           </div>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '1rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+              style={{ marginTop: '0.2rem', width: '16px', height: '16px', accentColor: 'var(--barn-red)' }} />
+            <span style={{ fontSize: '0.8rem', color: '#666' }}>
+              I agree to the <Link href="/terms" target="_blank" style={{ color: 'var(--barn-red)' }}>Terms of Service</Link>,{' '}
+              <Link href="/privacy" target="_blank" style={{ color: 'var(--barn-red)' }}>Privacy Policy</Link>, and{' '}
+              <Link href="/fees" target="_blank" style={{ color: 'var(--barn-red)' }}>Fees</Link>.
+            </span>
+          </label>
 
           {error && (
             <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>

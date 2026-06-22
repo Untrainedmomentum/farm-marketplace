@@ -19,6 +19,7 @@ export default function DeliveryDashboard() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [message, setMessage] = useState('')
   const [connecting, setConnecting] = useState(false)
+  const [upgrading, setUpgrading] = useState(false)
 
   const [name, setName] = useState('')
   const [serviceArea, setServiceArea] = useState('')
@@ -82,6 +83,23 @@ export default function DeliveryDashboard() {
     window.location.href = data.url
   }
 
+  async function upgrade() {
+    setUpgrading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setUpgrading(false); return }
+    const res = await fetch('/api/subscribe-driver', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || !data.url) {
+      setMessage(data.error || 'Could not start checkout.')
+      setUpgrading(false)
+      return
+    }
+    window.location.href = data.url
+  }
+
   async function markDelivered(id: string) {
     await supabase.from('deliveries').update({ status: 'delivered' }).eq('id', id)
     setDeliveries(deliveries.map(d => d.id === id ? { ...d, status: 'delivered' } : d))
@@ -118,6 +136,15 @@ export default function DeliveryDashboard() {
             <button onClick={connectStripe} disabled={connecting}
               style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: 4, cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
               {connecting ? 'Connecting...' : '💳 Connect Stripe to get paid'}
+            </button>
+          )}
+          <p style={{ marginTop: '1rem', fontSize: '0.85rem', color: driver.subscribed ? 'var(--green)' : '#888' }}>
+            {driver.subscribed ? '✅ Subscribed — $1 platform fee per delivery' : '$5 platform fee per delivery on the free plan'}
+          </p>
+          {!driver.subscribed && (
+            <button onClick={upgrade} disabled={upgrading}
+              style={{ backgroundColor: '#8B1A1A', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: 4, cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
+              {upgrading ? 'Redirecting...' : 'Upgrade — $20/mo (drops fee to $1/delivery)'}
             </button>
           )}
         </div>

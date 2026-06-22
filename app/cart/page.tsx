@@ -136,7 +136,8 @@ export default function Cart() {
           <span>${(cartTotal + SERVICE_FEE).toFixed(2)}</span>
         </div>
         <p style={{ color: '#888', fontSize: 12, margin: '8px 0 16px' }}>
-          One flat ${SERVICE_FEE} fee no matter how many farms are in your cart — every farm gets 100% of their sale.
+          One flat ${SERVICE_FEE} fee no matter how many farms are in your cart — every farm gets 100% of their sale.{' '}
+          <a href="/fees" style={{ color: '#888', textDecoration: 'underline' }}>See all fees</a>
         </p>
         <button onClick={handleCheckout} disabled={checkingOut}
           style={{ width: '100%', padding: '14px 20px', background: 'green', color: 'white', border: 'none', borderRadius: 8, cursor: checkingOut ? 'default' : 'pointer', fontSize: 16, opacity: checkingOut ? 0.7 : 1 }}>

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
   }
 
-  const { providerName, serviceCategory, description, serviceArea, rateInfo, contactInfo } = await request.json()
+  const { providerName, serviceCategory, description, serviceArea, rateInfo, contactInfo, bookingRate } = await request.json()
   if (!providerName || !serviceCategory) {
     return NextResponse.json({ error: 'Provider name and service category are required' }, { status: 400 })
   }
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       service_area: serviceArea || null,
       rate_info: rateInfo || null,
       contact_info: contactInfo || null,
+      booking_rate: bookingRate ? parseFloat(bookingRate) : null,
       created_by: user.id,
     })
     .select()

@@ -2,6 +2,7 @@
 import { Geist } from "next/font/google"
 import "./globals.css"
 import Header from "@/components/Header"
+import Footer from "@/components/Footer"
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ margin: 0, background: '#FFFDF5', minHeight: '100vh', fontFamily: 'Georgia, serif' }}>
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   )
