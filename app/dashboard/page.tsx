@@ -17,6 +17,11 @@ export default function Dashboard() {
   const [message, setMessage] = useState('')
   const [becomingFarmer, setBecomingFarmer] = useState(false)
   const [connectingStripe, setConnectingStripe] = useState(false)
+  const [csaPrograms, setCsaPrograms] = useState<any[]>([])
+  const [csaName, setCsaName] = useState('')
+  const [csaContents, setCsaContents] = useState('')
+  const [csaSchedule, setCsaSchedule] = useState('')
+  const [csaPrice, setCsaPrice] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -37,6 +42,8 @@ export default function Dashboard() {
           setFarm(farm)
           const { data: products } = await supabase.from('products').select('*').eq('farm_id', farm.id)
           setProducts(products || [])
+          const { data: csa } = await supabase.from('csa_programs').select('*').eq('farm_id', farm.id)
+          setCsaPrograms(csa || [])
         }
       }
       setLoading(false)
@@ -65,6 +72,19 @@ export default function Dashboard() {
     setProductName(''); setProductPrice(''); setProductDesc(''); setProductQty('')
     const { data } = await supabase.from('products').select('*').eq('farm_id', farm.id)
     setProducts(data || [])
+  }
+
+  async function addCsaProgram() {
+    if (!csaName) return
+    const { error } = await supabase.from('csa_programs').insert({
+      farm_id: farm.id, name: csaName, contents_description: csaContents,
+      schedule_text: csaSchedule, price: csaPrice ? parseFloat(csaPrice) : null,
+    })
+    if (error) { setMessage(error.message); return }
+    setMessage('CSA program added!')
+    setCsaName(''); setCsaContents(''); setCsaSchedule(''); setCsaPrice('')
+    const { data } = await supabase.from('csa_programs').select('*').eq('farm_id', farm.id)
+    setCsaPrograms(data || [])
   }
 
   async function handleLogout() {
@@ -173,7 +193,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #eee' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
             <h3 style={{ color: 'var(--barn-red)', marginBottom: '1rem' }}>Your Products ({products.length})</h3>
             {products.length === 0 && <p style={{ color: '#888' }}>No products yet.</p>}
             {products.map(p => (
@@ -182,6 +202,41 @@ export default function Dashboard() {
                 {p.description && <p style={{ color: '#666', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{p.description}</p>}
               </div>
             ))}
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '1rem' }}>Add CSA Program</h3>
+            <input placeholder="Program name (e.g. Summer Veggie Box)" value={csaName} onChange={e => setCsaName(e.target.value)}
+              style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+            <input placeholder="What's in the box?" value={csaContents} onChange={e => setCsaContents(e.target.value)}
+              style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+            <input placeholder="Schedule (e.g. Weekly, June-Sept)" value={csaSchedule} onChange={e => setCsaSchedule(e.target.value)}
+              style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+            <input placeholder="Price (e.g. 35.00)" value={csaPrice} onChange={e => setCsaPrice(e.target.value)}
+              style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+            <button onClick={addCsaProgram}
+              style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+              + Add CSA Program
+            </button>
+            {csaPrograms.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                {csaPrograms.map(c => (
+                  <div key={c.id} style={{ border: '1px solid #eee', borderRadius: '6px', padding: '0.75rem', marginBottom: '0.5rem' }}>
+                    <strong>{c.name}</strong>{c.price != null && ` — $${c.price}`}
+                    {c.schedule_text && <p style={{ color: '#666', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{c.schedule_text}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #eee' }}>
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Need a hand on the farm?</h3>
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>Post a listing to find helpers in the community.</p>
+            <button onClick={() => router.push('/helpers')}
+              style={{ backgroundColor: '#F0C040', color: '#2C1810', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
+              🙋 Find Helpers →
+            </button>
           </div>
         </div>
       )}

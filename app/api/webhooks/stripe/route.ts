@@ -21,10 +21,46 @@ export async function POST(request: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const userId = session.metadata?.user_id
-    const farmId = session.metadata?.farm_id
     const paymentIntentId = session.payment_intent as string | null
     const supabaseAdmin = getSupabaseAdmin()
+
+    if (session.metadata?.type === 'delivery') {
+      const driverId = session.metadata.driver_id
+      const requesterId = session.metadata.requester_id
+      const address = session.metadata.address
+
+      if (driverId && requesterId && paymentIntentId) {
+        const { data: existing } = await supabaseAdmin
+          .from('deliveries')
+          .select('id')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .maybeSingle()
+
+        if (!existing) {
+          const { data: recentOrder } = await supabaseAdmin
+            .from('orders')
+            .select('id')
+            .eq('buyer_id', requesterId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          await supabaseAdmin.from('deliveries').insert({
+            driver_id: driverId,
+            requester_id: requesterId,
+            order_id: recentOrder?.id ?? null,
+            delivery_address: address,
+            fee: (session.amount_total ?? 0) / 100,
+            status: 'paid',
+            stripe_payment_intent_id: paymentIntentId,
+          })
+        }
+      }
+      return NextResponse.json({ received: true })
+    }
+
+    const userId = session.metadata?.user_id
+    const farmId = session.metadata?.farm_id
 
     if (userId && farmId && paymentIntentId) {
       const { data: existing } = await supabaseAdmin
