@@ -30,7 +30,12 @@ export default function Marketplace() {
               style={{ border: `2px solid ${hoveredId === farm.id ? '#8B1A1A' : '#D4C5A9'}`, borderRadius: 12, padding: 24, background: '#FFFDF5', transition: 'border-color 0.2s', cursor: 'pointer' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🌾</div>
               <h2 style={{ color: '#8B1A1A', margin: '0 0 8px', fontSize: 22 }}>{farm.name}</h2>
-              {farm.cash_enabled && <span style={{ background: '#5D8A3C', color: 'white', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>💵 Cash accepted</span>}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {farm.categories?.map((cat: string) => (
+                  <span key={cat} style={{ background: '#F0C040', color: '#2C1810', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>{cat}</span>
+                ))}
+                {farm.cash_enabled && <span style={{ background: '#5D8A3C', color: 'white', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>💵 Cash accepted</span>}
+              </div>
               <p style={{ color: '#8B1A1A', marginTop: 16, fontSize: 14, fontWeight: 'bold' }}>Shop Now →</p>
             </div>
           </Link>

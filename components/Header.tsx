@@ -48,6 +48,9 @@ export default function Header() {
 
       <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
         <Link href="/marketplace" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Marketplace</Link>
+        <Link href="/map" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Map</Link>
+        <Link href="/markets" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Markets</Link>
+        <Link href="/events" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Events</Link>
         <Link href="/cart" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Cart</Link>
         <Link href="/dashboard" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Dashboard</Link>
         {user ? (

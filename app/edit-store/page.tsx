@@ -22,6 +22,13 @@ export default function EditStorePage() {
   const [hasWebsite, setHasWebsite] = useState(false)
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [wantsCustomSite, setWantsCustomSite] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
+
+  const CATEGORY_OPTIONS = ['Produce', 'Baked Goods', 'Dairy', 'Meat', 'Eggs', 'Flowers', 'Other']
+
+  const toggleCategory = (cat: string) => {
+    setCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+  }
 
   useEffect(() => {
     async function load() {
@@ -34,6 +41,7 @@ export default function EditStorePage() {
 
       setFarm(farm)
       setFarmName(farm.name)
+      setCategories(farm.categories || [])
       if (farm.logo_url?.startsWith('http')) setLogoPreview(farm.logo_url)
 
       if (farm.color_theme) {
@@ -78,6 +86,7 @@ export default function EditStorePage() {
         name: farmName,
         logo_url: logoUrl,
         color_theme: JSON.stringify({ header: headerColor, bg: bgColor, text: textColor, accent: accentColor }),
+        categories,
       }).eq('id', farm.id)
 
       if (updateError) throw updateError
@@ -109,6 +118,25 @@ export default function EditStorePage() {
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={labelStyle}>Farm Name</label>
           <input style={inputStyle} value={farmName} onChange={e => setFarmName(e.target.value)} />
+        </div>
+
+        {/* Categories */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ color: '#8B1A1A', marginBottom: '0.75rem' }}>What do you sell?</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {CATEGORY_OPTIONS.map(cat => (
+              <label key={cat} style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer',
+                border: `1px solid ${categories.includes(cat) ? '#8B1A1A' : '#ccc'}`,
+                backgroundColor: categories.includes(cat) ? '#fff5f5' : 'white',
+                borderRadius: '999px', padding: '0.35rem 0.85rem', fontSize: '0.85rem',
+              }}>
+                <input type="checkbox" checked={categories.includes(cat)} onChange={() => toggleCategory(cat)}
+                  style={{ width: '14px', height: '14px', accentColor: '#8B1A1A' }} />
+                {cat}
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Colors */}
