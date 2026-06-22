@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('drivers').update({ stripe_account_id: accountId }).eq('id', driver.id)
   }
 
-  await syncPayoutSchedule(stripe, accountId, false)
+  await syncPayoutSchedule(stripe, accountId, 7)
 
   const origin = request.headers.get('origin') || new URL(request.url).origin
 
