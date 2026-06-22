@@ -62,6 +62,10 @@ export default function Dashboard() {
 
   async function addProduct() {
     if (!productName || !productPrice) return
+    if (products.filter(p => p.active).length >= 5) {
+      setMessage('Product limit reached: each farm can list up to 5 active products.')
+      return
+    }
     const { error } = await supabase.from('products').insert({
       farm_id: farm.id, name: productName, price: parseFloat(productPrice),
       description: productDesc, quantity: parseInt(productQty) || 0,
@@ -177,20 +181,29 @@ export default function Dashboard() {
           </div>
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
-            <h3 style={{ color: 'var(--barn-red)', marginBottom: '1rem' }}>Add Product</h3>
-            {[
-              { placeholder: 'Product name', value: productName, set: setProductName },
-              { placeholder: 'Price (e.g. 4.99)', value: productPrice, set: setProductPrice },
-              { placeholder: 'Description', value: productDesc, set: setProductDesc },
-              { placeholder: 'Quantity', value: productQty, set: setProductQty },
-            ].map(({ placeholder, value, set }) => (
-              <input key={placeholder} placeholder={placeholder} value={value} onChange={e => set(e.target.value)}
-                style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
-            ))}
-            <button onClick={addProduct}
-              style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-              + Add Product
-            </button>
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '0.25rem' }}>Add Product</h3>
+            <p style={{ color: products.filter(p => p.active).length >= 5 ? 'var(--barn-red)' : '#888', fontSize: '0.85rem', marginBottom: '1rem' }}>
+              {products.filter(p => p.active).length} / 5 active products used
+            </p>
+            {products.filter(p => p.active).length >= 5 ? (
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>You've reached the 5-product limit for free accounts. Remove or deactivate a product to add another.</p>
+            ) : (
+              <>
+                {[
+                  { placeholder: 'Product name', value: productName, set: setProductName },
+                  { placeholder: 'Price (e.g. 4.99)', value: productPrice, set: setProductPrice },
+                  { placeholder: 'Description', value: productDesc, set: setProductDesc },
+                  { placeholder: 'Quantity', value: productQty, set: setProductQty },
+                ].map(({ placeholder, value, set }) => (
+                  <input key={placeholder} placeholder={placeholder} value={value} onChange={e => set(e.target.value)}
+                    style={{ display: 'block', width: '100%', padding: '0.6rem', marginBottom: '0.75rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }} />
+                ))}
+                <button onClick={addProduct}
+                  style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+                  + Add Product
+                </button>
+              </>
+            )}
           </div>
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>

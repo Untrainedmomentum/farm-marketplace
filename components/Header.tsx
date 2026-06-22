@@ -54,6 +54,7 @@ export default function Header() {
         <Link href="/csa" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>CSAs</Link>
         <Link href="/helpers" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Helpers</Link>
         <Link href="/drivers" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Drivers</Link>
+        <Link href="/services" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Services</Link>
         <Link href="/cart" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Cart</Link>
         <Link href="/dashboard" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Dashboard</Link>
         {user ? (

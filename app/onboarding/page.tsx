@@ -35,8 +35,10 @@ export default function OnboardingPage() {
   const [wantsCustomSite, setWantsCustomSite] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/auth/login'); return }
+      const { data: existingFarm } = await supabase.from('farms').select('id').eq('owner_id', session.user.id).maybeSingle()
+      if (existingFarm) { router.push('/dashboard'); return }
       setUserId(session.user.id)
     })
   }, [])

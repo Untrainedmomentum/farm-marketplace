@@ -1,6 +1,7 @@
 ﻿import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import AddToCartButton from '@/components/AddToCartButton'
+import ReviewsSection from '@/components/ReviewsSection'
 import Link from 'next/link'
 
 export default async function FarmPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,6 +26,11 @@ export default async function FarmPage({ params }: { params: Promise<{ slug: str
         )}
         <h1 style={{ color: '#fff', margin: 0, fontSize: '2.5rem' }}>{farm.name}</h1>
         <p style={{ color: theme.accent, margin: '0.25rem 0 0', letterSpacing: '0.15em', fontSize: '0.85rem' }}>FRESH FROM THE FARM</p>
+        {farm.updated_at && (
+          <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0.4rem 0 0', fontSize: '0.75rem' }}>
+            Updated {Math.floor((Date.now() - new Date(farm.updated_at).getTime()) / 86400000)} days ago
+          </p>
+        )}
         {farm.cash_enabled && (
           <span style={{ display: 'inline-block', marginTop: '0.75rem', backgroundColor: theme.accent, color: 'white', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem' }}>
             💵 Cash accepted
@@ -61,6 +67,8 @@ export default async function FarmPage({ params }: { params: Promise<{ slug: str
             </div>
           ))}
         </div>
+
+        <ReviewsSection farmId={farm.id} accentColor={theme.accent} />
       </div>
 
       <div style={{ backgroundColor: theme.header, color: '#fff', textAlign: 'center', padding: '1.5rem', marginTop: '3rem', fontSize: '0.85rem' }}>

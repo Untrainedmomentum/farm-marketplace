@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const { data: farm, error } = await supabase
     .from('farms')
-    .select('id, stripe_account_id, subscription_active')
+    .select('id, stripe_account_id, created_at')
     .eq('owner_id', user.id)
     .single()
 
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     await supabase.from('farms').update({ stripe_account_id: accountId }).eq('id', farm.id)
   }
 
-  await syncPayoutSchedule(stripe, accountId, !!farm.subscription_active)
+  const accountAgeDays = (Date.now() - new Date(farm.created_at).getTime()) / 86400000
+  await syncPayoutSchedule(stripe, accountId, accountAgeDays >= 30)
 
   const origin = request.headers.get('origin') || new URL(request.url).origin
 

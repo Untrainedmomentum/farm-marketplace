@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const SERVICE_FEE = 3
+
 type CartItem = {
   id: string
   product_id: string
@@ -21,7 +23,7 @@ type CartItem = {
 export default function Cart() {
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [checkingOutFarmId, setCheckingOutFarmId] = useState<string | null>(null)
+  const [checkingOut, setCheckingOut] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
 
   useEffect(() => {
@@ -50,24 +52,23 @@ export default function Cart() {
     setItems(items.map(i => i.id === id ? { ...i, quantity: qty } : i))
   }
 
-  async function handleCheckout(farmId: string) {
+  async function handleCheckout() {
     setCheckoutError('')
-    setCheckingOutFarmId(farmId)
+    setCheckingOut(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       setCheckoutError('Please log in to check out.')
-      setCheckingOutFarmId(null)
+      setCheckingOut(false)
       return
     }
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ farmId }),
     })
     const data = await res.json()
     if (!res.ok || !data.url) {
       setCheckoutError(data.error || 'Checkout failed. Please try again.')
-      setCheckingOutFarmId(null)
+      setCheckingOut(false)
       return
     }
     window.location.href = data.url
@@ -79,6 +80,9 @@ export default function Cart() {
     acc[key].items.push(item)
     return acc
   }, {})
+
+  const cartTotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const farmCount = Object.keys(grouped).length
 
   if (loading) return <main style={{ padding: 40 }}><p>Loading...</p></main>
   if (items.length === 0) return (
@@ -94,7 +98,6 @@ export default function Cart() {
       {checkoutError && <p style={{ color: 'red' }}>{checkoutError}</p>}
       {Object.values(grouped).map((group: any) => {
         const subtotal = group.items.reduce((sum: number, i: CartItem) => sum + i.product.price * i.quantity, 0)
-        const isCheckingOut = checkingOutFarmId === group.farmId
         return (
           <div key={group.farm.slug} style={{ marginBottom: 30, borderBottom: '1px solid #ccc', paddingBottom: 20 }}>
             <h2>{group.farm.name}</h2>
@@ -112,16 +115,34 @@ export default function Cart() {
                 </div>
               </div>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+            <div style={{ textAlign: 'right', marginTop: 8 }}>
               <strong>Subtotal: ${subtotal.toFixed(2)}</strong>
-              <button onClick={() => handleCheckout(group.farmId)} disabled={isCheckingOut}
-                style={{ padding: '10px 20px', background: 'green', color: 'white', border: 'none', borderRadius: 8, cursor: isCheckingOut ? 'default' : 'pointer', fontSize: 15, opacity: isCheckingOut ? 0.7 : 1 }}>
-                {isCheckingOut ? 'Redirecting to checkout...' : `Checkout with ${group.farm.name}`}
-              </button>
             </div>
           </div>
         )
       })}
+
+      <div style={{ marginTop: 20, padding: 20, background: '#FFFDF5', border: '1px solid #D4C5A9', borderRadius: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span>Items ({farmCount} farm{farmCount > 1 ? 's' : ''})</span>
+          <span>${cartTotal.toFixed(2)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#666', fontSize: 14 }}>
+          <span>Service fee</span>
+          <span>${SERVICE_FEE.toFixed(2)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 'bold', borderTop: '1px solid #D4C5A9', paddingTop: 10, marginTop: 10 }}>
+          <span>Total</span>
+          <span>${(cartTotal + SERVICE_FEE).toFixed(2)}</span>
+        </div>
+        <p style={{ color: '#888', fontSize: 12, margin: '8px 0 16px' }}>
+          One flat ${SERVICE_FEE} fee no matter how many farms are in your cart — every farm gets 100% of their sale.
+        </p>
+        <button onClick={handleCheckout} disabled={checkingOut}
+          style={{ width: '100%', padding: '14px 20px', background: 'green', color: 'white', border: 'none', borderRadius: 8, cursor: checkingOut ? 'default' : 'pointer', fontSize: 16, opacity: checkingOut ? 0.7 : 1 }}>
+          {checkingOut ? 'Redirecting to checkout...' : `Checkout — $${(cartTotal + SERVICE_FEE).toFixed(2)}`}
+        </button>
+      </div>
     </main>
   )
 }

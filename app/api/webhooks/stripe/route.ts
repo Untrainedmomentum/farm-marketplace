@@ -35,6 +35,21 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error('Transfer reversal failed (connected account balance likely insufficient):', err)
       }
+    } else if (charge.transfer_group) {
+      const transfers = await stripe.transfers.list({ transfer_group: charge.transfer_group, limit: 100 })
+      let remaining = dispute.amount
+      for (const transfer of transfers.data) {
+        if (remaining <= 0) break
+        const available = transfer.amount - (transfer.amount_reversed ?? 0)
+        const reverseAmount = Math.min(available, remaining)
+        if (reverseAmount <= 0) continue
+        try {
+          await stripe.transfers.createReversal(transfer.id, { amount: reverseAmount })
+          remaining -= reverseAmount
+        } catch (err) {
+          console.error('Transfer reversal failed (connected account balance likely insufficient):', err)
+        }
+      }
     }
 
     const paymentIntentId = charge.payment_intent as string | null
@@ -53,16 +68,31 @@ export async function POST(request: NextRequest) {
     const charge = await stripe.charges.retrieve(chargeId)
     const transferId = charge.transfer as string | null
 
-    if (dispute.status === 'won' && transferId) {
-      const transfer = await stripe.transfers.retrieve(transferId)
-      const amountReversed = transfer.amount_reversed ?? 0
-      if (amountReversed > 0) {
-        await stripe.transfers.create({
-          amount: amountReversed,
-          currency: transfer.currency,
-          destination: transfer.destination as string,
-          source_transaction: chargeId,
-        })
+    if (dispute.status === 'won') {
+      if (transferId) {
+        const transfer = await stripe.transfers.retrieve(transferId)
+        const amountReversed = transfer.amount_reversed ?? 0
+        if (amountReversed > 0) {
+          await stripe.transfers.create({
+            amount: amountReversed,
+            currency: transfer.currency,
+            destination: transfer.destination as string,
+            source_transaction: chargeId,
+          })
+        }
+      } else if (charge.transfer_group) {
+        const transfers = await stripe.transfers.list({ transfer_group: charge.transfer_group, limit: 100 })
+        for (const transfer of transfers.data) {
+          const amountReversed = transfer.amount_reversed ?? 0
+          if (amountReversed > 0) {
+            await stripe.transfers.create({
+              amount: amountReversed,
+              currency: transfer.currency,
+              destination: transfer.destination as string,
+              source_transaction: chargeId,
+            })
+          }
+        }
       }
     }
 
@@ -110,9 +140,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.metadata?.user_id
-    const farmId = session.metadata?.farm_id
+    const transferGroup = session.metadata?.transfer_group
 
-    if (userId && farmId && paymentIntentId) {
+    if (userId && paymentIntentId) {
       const { data: existing } = await supabaseAdmin
         .from('orders')
         .select('id')
@@ -124,13 +154,6 @@ export async function POST(request: NextRequest) {
           .from('cart_items')
           .select('product_id, farm_id, quantity, product:products(price)')
           .eq('user_id', userId)
-          .eq('farm_id', farmId)
-
-        const { data: farm } = await supabaseAdmin
-          .from('farms')
-          .select('subscription_active')
-          .eq('id', farmId)
-          .single()
 
         if (cartItems?.length) {
           const { data: order } = await supabaseAdmin
@@ -138,7 +161,7 @@ export async function POST(request: NextRequest) {
             .insert({
               buyer_id: userId,
               total: (session.amount_total ?? 0) / 100,
-              platform_fee: farm?.subscription_active ? 0 : 3,
+              platform_fee: 3,
               status: 'paid',
               stripe_payment_intent_id: paymentIntentId,
             })
@@ -155,7 +178,39 @@ export async function POST(request: NextRequest) {
                 price: (item.product as unknown as { price: number }).price,
               }))
             )
-            await supabaseAdmin.from('cart_items').delete().eq('user_id', userId).eq('farm_id', farmId)
+            await supabaseAdmin.from('cart_items').delete().eq('user_id', userId)
+
+            const subtotalsByFarm = new Map<string, number>()
+            for (const item of cartItems) {
+              const price = (item.product as unknown as { price: number }).price
+              const lineCents = Math.round(Number(price) * 100) * item.quantity
+              subtotalsByFarm.set(item.farm_id, (subtotalsByFarm.get(item.farm_id) ?? 0) + lineCents)
+            }
+
+            const { data: farms } = await supabaseAdmin
+              .from('farms')
+              .select('id, stripe_account_id')
+              .in('id', [...subtotalsByFarm.keys()])
+
+            const stripe = getStripeAdmin()
+            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+            const chargeId = paymentIntent.latest_charge as string | null
+
+            for (const farm of farms ?? []) {
+              const amount = subtotalsByFarm.get(farm.id)
+              if (!amount || !farm.stripe_account_id) continue
+              try {
+                await stripe.transfers.create({
+                  amount,
+                  currency: 'usd',
+                  destination: farm.stripe_account_id,
+                  transfer_group: transferGroup,
+                  ...(chargeId ? { source_transaction: chargeId } : {}),
+                })
+              } catch (err) {
+                console.error(`Transfer to farm ${farm.id} failed:`, err)
+              }
+            }
           }
         }
       }

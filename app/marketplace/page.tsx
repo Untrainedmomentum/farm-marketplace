@@ -15,9 +15,22 @@ export default function Marketplace() {
   const [searchOrigin, setSearchOrigin] = useState<{ lat: number; lng: number } | null>(null)
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
+  const [ratingsByFarm, setRatingsByFarm] = useState<Record<string, { avg: number; count: number }>>({})
 
   useEffect(() => {
     supabase.from('farms').select('*').then(({ data }) => setFarms(data || []))
+    supabase.from('reviews').select('farm_id, rating').then(({ data }) => {
+      const grouped: Record<string, number[]> = {}
+      for (const r of data || []) {
+        if (!grouped[r.farm_id]) grouped[r.farm_id] = []
+        grouped[r.farm_id].push(r.rating)
+      }
+      const result: Record<string, { avg: number; count: number }> = {}
+      for (const [farmId, ratings] of Object.entries(grouped)) {
+        result[farmId] = { avg: ratings.reduce((a, b) => a + b, 0) / ratings.length, count: ratings.length }
+      }
+      setRatingsByFarm(result)
+    })
   }, [])
 
   async function handleLocate(e: React.FormEvent) {
@@ -114,7 +127,12 @@ export default function Marketplace() {
                 boxShadow: hoveredId === farm.id ? '0 8px 20px rgba(139,26,26,0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
               }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🌾</div>
-              <h2 style={{ color: '#8B1A1A', margin: '0 0 8px', fontSize: 22 }}>{farm.name}</h2>
+              <h2 style={{ color: '#8B1A1A', margin: '0 0 4px', fontSize: 22 }}>{farm.name}</h2>
+              {ratingsByFarm[farm.id] && (
+                <p style={{ margin: '0 0 8px', fontSize: 13, color: '#8B6914' }}>
+                  {'★'.repeat(Math.round(ratingsByFarm[farm.id].avg))}{'☆'.repeat(5 - Math.round(ratingsByFarm[farm.id].avg))} ({ratingsByFarm[farm.id].count})
+                </p>
+              )}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                 {farm.categories?.map((cat: string) => (
                   <span key={cat} style={{ background: '#F0C040', color: '#2C1810', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>{cat}</span>
@@ -122,7 +140,12 @@ export default function Marketplace() {
                 {farm.cash_enabled && <span style={{ background: '#5D8A3C', color: 'white', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>💵 Cash accepted</span>}
                 {farm._distance != null && <span style={{ background: '#D4C5A9', color: '#2C1810', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>📍 {farm._distance.toFixed(1)} mi</span>}
               </div>
-              <p style={{ color: '#8B1A1A', marginTop: 16, fontSize: 14, fontWeight: 'bold' }}>Shop Now →</p>
+              {farm.updated_at && (
+                <p style={{ margin: '0 0 8px', fontSize: 11, color: '#aaa' }}>
+                  Updated {Math.floor((Date.now() - new Date(farm.updated_at).getTime()) / 86400000)}d ago
+                </p>
+              )}
+              <p style={{ color: '#8B1A1A', marginTop: 8, fontSize: 14, fontWeight: 'bold' }}>Shop Now →</p>
             </div>
           </Link>
         ))}
