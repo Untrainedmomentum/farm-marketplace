@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_RmwuhBjRD5j1MuLPWZjieWBvf8Mx",
+      "name": "farm-marketplace",
+      "directory": ".",
+      "orgId": "team_LHaiNlsZJSls8YzjCzfsRvDd"
+    }
+  ]
+}
