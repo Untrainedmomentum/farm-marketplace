@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getStripeAdmin, getOrCreatePrice } from '@/lib/stripeAdmin'
 
-const TIER_PRICES = {
-  paid: { lookupKey: 'farm_paid_monthly', amountCents: 1500, name: 'My Farm Express — Paid Plan' },
-  premium: { lookupKey: 'farm_premium_monthly', amountCents: 5000, name: 'My Farm Express — Premium Plan' },
-}
-
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (!authHeader) {
     return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
   }
   const token = authHeader.replace('Bearer ', '')
-
-  const { tier } = await request.json()
-  if (tier !== 'paid' && tier !== 'premium') {
-    return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
-  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,27 +20,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
   }
 
-  const { data: farm, error } = await supabase
-    .from('farms')
+  const { data: driver, error } = await supabase
+    .from('drivers')
     .select('id, stripe_customer_id')
-    .eq('owner_id', user.id)
+    .eq('user_id', user.id)
     .single()
 
-  if (error || !farm) {
-    return NextResponse.json({ error: 'No farm found for this account' }, { status: 400 })
+  if (error || !driver) {
+    return NextResponse.json({ error: 'No driver profile found for this account' }, { status: 400 })
   }
 
   const stripe = getStripeAdmin()
-  let customerId = farm.stripe_customer_id
+  let customerId = driver.stripe_customer_id
 
   if (!customerId) {
     const customer = await stripe.customers.create({ email: user.email })
     customerId = customer.id
-    await supabase.from('farms').update({ stripe_customer_id: customerId }).eq('id', farm.id)
+    await supabase.from('drivers').update({ stripe_customer_id: customerId }).eq('id', driver.id)
   }
 
-  const { lookupKey, amountCents, name } = TIER_PRICES[tier as 'paid' | 'premium']
-  const priceId = await getOrCreatePrice(stripe, lookupKey, amountCents, name)
+  const priceId = await getOrCreatePrice(stripe, 'driver_monthly', 2000, 'My Farm Express — Driver Plan')
 
   const origin = request.headers.get('origin') || new URL(request.url).origin
 
@@ -58,9 +47,9 @@ export async function POST(request: NextRequest) {
     mode: 'subscription',
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard?subscribed=${tier}`,
-    cancel_url: `${origin}/dashboard`,
-    metadata: { entity: 'farm', farm_id: farm.id, tier },
+    success_url: `${origin}/delivery-dashboard?subscribed=true`,
+    cancel_url: `${origin}/delivery-dashboard`,
+    metadata: { entity: 'driver', driver_id: driver.id },
   })
 
   return NextResponse.json({ url: session.url })

@@ -102,7 +102,10 @@ export async function POST(request: NextRequest) {
   if (event.type === 'account.updated') {
     const account = event.data.object as Stripe.Account
     const supabaseAdmin = getSupabaseAdmin()
-    await supabaseAdmin.from('farms').update({ payouts_enabled: !!account.payouts_enabled }).eq('stripe_account_id', account.id)
+    const payoutsEnabled = !!account.payouts_enabled
+    await supabaseAdmin.from('farms').update({ payouts_enabled: payoutsEnabled }).eq('stripe_account_id', account.id)
+    await supabaseAdmin.from('drivers').update({ payouts_enabled: payoutsEnabled }).eq('stripe_account_id', account.id)
+    await supabaseAdmin.from('farm_services').update({ payouts_enabled: payoutsEnabled }).eq('stripe_account_id', account.id)
     return NextResponse.json({ received: true })
   }
 
@@ -112,6 +115,8 @@ export async function POST(request: NextRequest) {
     const isActive = event.type === 'customer.subscription.updated' && (subscription.status === 'active' || subscription.status === 'trialing')
     if (!isActive) {
       await supabaseAdmin.from('farms').update({ subscription_tier: 'free' }).eq('stripe_subscription_id', subscription.id)
+      await supabaseAdmin.from('drivers').update({ subscribed: false }).eq('stripe_subscription_id', subscription.id)
+      await supabaseAdmin.from('farm_services').update({ subscribed: false }).eq('stripe_subscription_id', subscription.id)
     }
     return NextResponse.json({ received: true })
   }
@@ -122,13 +127,47 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin()
 
     if (session.mode === 'subscription') {
-      const farmId = session.metadata?.farm_id
-      const tier = session.metadata?.tier
-      if (farmId && tier) {
+      const entity = session.metadata?.entity
+      const subscriptionId = session.subscription as string
+      if (entity === 'farm' && session.metadata?.farm_id && session.metadata?.tier) {
         await supabaseAdmin.from('farms').update({
-          subscription_tier: tier,
-          stripe_subscription_id: session.subscription as string,
-        }).eq('id', farmId)
+          subscription_tier: session.metadata.tier,
+          stripe_subscription_id: subscriptionId,
+        }).eq('id', session.metadata.farm_id)
+      } else if (entity === 'driver' && session.metadata?.driver_id) {
+        await supabaseAdmin.from('drivers').update({
+          subscribed: true,
+          stripe_subscription_id: subscriptionId,
+        }).eq('id', session.metadata.driver_id)
+      } else if (entity === 'service' && session.metadata?.service_id) {
+        await supabaseAdmin.from('farm_services').update({
+          subscribed: true,
+          stripe_subscription_id: subscriptionId,
+        }).eq('id', session.metadata.service_id)
+      }
+      return NextResponse.json({ received: true })
+    }
+
+    if (session.metadata?.type === 'service_booking') {
+      const serviceId = session.metadata.service_id
+      const requesterId = session.metadata.requester_id
+
+      if (serviceId && requesterId && paymentIntentId) {
+        const { data: existing } = await supabaseAdmin
+          .from('service_bookings')
+          .select('id')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .maybeSingle()
+
+        if (!existing) {
+          await supabaseAdmin.from('service_bookings').insert({
+            service_id: serviceId,
+            requester_id: requesterId,
+            fee: (session.amount_total ?? 0) / 100,
+            status: 'paid',
+            stripe_payment_intent_id: paymentIntentId,
+          })
+        }
       }
       return NextResponse.json({ received: true })
     }
