@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin } from '@/lib/stripeAdmin'
+import { getStripeAdmin, syncPayoutSchedule } from '@/lib/stripeAdmin'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
     accountId = account.id
     await supabase.from('drivers').update({ stripe_account_id: accountId }).eq('id', driver.id)
   }
+
+  await syncPayoutSchedule(stripe, accountId, false)
 
   const origin = request.headers.get('origin') || new URL(request.url).origin
 

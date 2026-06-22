@@ -8,3 +8,13 @@ export function getStripeAdmin(): Stripe {
   }
   return stripeInstance
 }
+
+export async function syncPayoutSchedule(stripe: Stripe, accountId: string, isPaid: boolean) {
+  try {
+    await stripe.accounts.update(accountId, {
+      settings: { payouts: { schedule: { delay_days: isPaid ? 2 : 7 } } },
+    })
+  } catch (err) {
+    console.error('Failed to sync payout schedule:', err)
+  }
+}
