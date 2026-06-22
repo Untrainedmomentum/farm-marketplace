@@ -22,6 +22,9 @@ export default function EventsPage() {
   const [linkToFarm, setLinkToFarm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
+  const [currentMonth, setCurrentMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   useEffect(() => {
     loadEvents()
@@ -71,14 +74,43 @@ export default function EventsPage() {
     loadEvents()
   }
 
+  const eventsByDate = events.reduce((acc: Record<string, FarmEvent[]>, ev) => {
+    if (!ev.event_date) return acc
+    const key = ev.event_date.slice(0, 10)
+    if (!acc[key]) acc[key] = []
+    acc[key].push(ev)
+    return acc
+  }, {})
+
+  const monthLabel = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const firstOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+  const startWeekday = firstOfMonth.getDay()
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
+  const cells: (string | null)[] = [...Array(startWeekday).fill(null)]
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    cells.push(dateStr)
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  const displayedEvents = selectedDate
+    ? events.filter(ev => ev.event_date?.slice(0, 10) === selectedDate)
+    : events
+
   return (
     <main style={{ padding: 40, fontFamily: 'Georgia, serif', maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h1 style={{ color: 'var(--barn-red)' }}>Farm Events</h1>
-        <button onClick={() => setShowForm(!showForm)}
-          style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-          {showForm ? 'Cancel' : '+ Add an Event'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => setViewMode(viewMode === 'calendar' ? 'list' : 'calendar')}
+            style={{ background: 'none', border: '1px solid #D4C5A9', color: '#5D4E37', padding: '0.6rem 1.1rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+            {viewMode === 'calendar' ? '☰ List View' : '📅 Calendar View'}
+          </button>
+          <button onClick={() => setShowForm(!showForm)}
+            style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+            {showForm ? 'Cancel' : '+ Add an Event'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -106,8 +138,57 @@ export default function EventsPage() {
       )}
 
       {loading && <p>Loading...</p>}
-      {!loading && events.length === 0 && <p style={{ color: '#888' }}>No events listed yet. Be the first to add one!</p>}
-      {events.map(ev => (
+
+      {!loading && viewMode === 'calendar' && (
+        <div style={{ backgroundColor: 'white', border: '1px solid #eee', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+              style={{ background: 'none', border: 'none', color: 'var(--barn-red)', cursor: 'pointer', fontSize: '1.1rem' }}>←</button>
+            <strong style={{ color: 'var(--barn-red)' }}>{monthLabel}</strong>
+            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+              style={{ background: 'none', border: 'none', color: 'var(--barn-red)', cursor: 'pointer', fontSize: '1.1rem' }}>→</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+              <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', color: '#999' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {cells.map((dateStr, i) => {
+              const dayEvents = dateStr ? eventsByDate[dateStr] || [] : []
+              const isSelected = dateStr === selectedDate
+              return (
+                <div key={i} onClick={() => dateStr && setSelectedDate(isSelected ? null : dateStr)}
+                  style={{
+                    minHeight: 48, borderRadius: 6, padding: '0.4rem', cursor: dateStr ? 'pointer' : 'default',
+                    backgroundColor: isSelected ? 'var(--barn-red)' : dayEvents.length ? '#fff5e6' : '#fafafa',
+                    border: dayEvents.length ? '1px solid var(--gold)' : '1px solid #eee',
+                  }}>
+                  {dateStr && (
+                    <>
+                      <div style={{ fontSize: '0.75rem', color: isSelected ? 'white' : '#666' }}>{Number(dateStr.slice(8, 10))}</div>
+                      {dayEvents.length > 0 && (
+                        <div style={{ fontSize: '0.7rem', color: isSelected ? 'white' : 'var(--barn-red)', fontWeight: 'bold' }}>
+                          {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {!loading && selectedDate && (
+        <button onClick={() => setSelectedDate(null)} style={{ marginBottom: '1rem', background: 'none', border: '1px solid #ccc', borderRadius: 4, padding: '0.4rem 1rem', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '0.85rem' }}>
+          ✕ Showing {selectedDate} only — clear
+        </button>
+      )}
+
+      {!loading && displayedEvents.length === 0 && <p style={{ color: '#888' }}>No events {selectedDate ? 'on this day' : 'listed yet. Be the first to add one!'}</p>}
+      {displayedEvents.map(ev => (
         <div key={ev.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: '1rem', marginBottom: '0.75rem', backgroundColor: 'white' }}>
           <h3 style={{ color: 'var(--barn-red)', margin: '0 0 0.25rem' }}>{ev.title}</h3>
           {ev.event_date && <p style={{ margin: '0 0 0.25rem', fontSize: '0.9rem' }}>📅 {ev.event_date}</p>}
