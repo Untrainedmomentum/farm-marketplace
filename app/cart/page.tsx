@@ -21,6 +21,8 @@ type CartItem = {
 export default function Cart() {
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [checkingOut, setCheckingOut] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
 
   useEffect(() => {
     loadCart()
@@ -46,6 +48,28 @@ export default function Cart() {
     if (qty < 1) { removeItem(id); return }
     await supabase.from('cart_items').update({ quantity: qty }).eq('id', id)
     setItems(items.map(i => i.id === id ? { ...i, quantity: qty } : i))
+  }
+
+  async function handleCheckout() {
+    setCheckoutError('')
+    setCheckingOut(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setCheckoutError('Please log in to check out.')
+      setCheckingOut(false)
+      return
+    }
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || !data.url) {
+      setCheckoutError(data.error || 'Checkout failed. Please try again.')
+      setCheckingOut(false)
+      return
+    }
+    window.location.href = data.url
   }
 
   const grouped = items.reduce((acc: any, item) => {
@@ -89,8 +113,10 @@ export default function Cart() {
       ))}
       <div style={{ borderTop: '1px solid #ccc', paddingTop: 20, marginTop: 20 }}>
         <h2>Total: ${total.toFixed(2)}</h2>
-        <button style={{ padding: '12px 24px', background: 'green', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 16 }}>
-          Proceed to Checkout
+        {checkoutError && <p style={{ color: 'red' }}>{checkoutError}</p>}
+        <button onClick={handleCheckout} disabled={checkingOut}
+          style={{ padding: '12px 24px', background: 'green', color: 'white', border: 'none', borderRadius: 8, cursor: checkingOut ? 'default' : 'pointer', fontSize: 16, opacity: checkingOut ? 0.7 : 1 }}>
+          {checkingOut ? 'Redirecting to checkout...' : 'Proceed to Checkout'}
         </button>
       </div>
     </main>
