@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 type Driver = {
@@ -50,6 +51,9 @@ export default function DriversPage() {
 
   return (
     <main style={{ padding: 40, fontFamily: 'Georgia, serif', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ position: 'relative', height: 160, borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <Image src="/images/delivery-bag.png" alt="A bag of fresh groceries ready for delivery" fill style={{ objectFit: 'cover' }} />
+      </div>
       <h1 style={{ color: 'var(--barn-red)' }}>Delivery Drivers</h1>
       <p style={{ color: '#666', marginBottom: '1.5rem' }}>Pick a driver to deliver your order. Drivers set their own rate and are paid directly.</p>
 

@@ -8,6 +8,13 @@ const FEATURES = [
   { icon: '🚚', title: 'Delivery, helpers & more', desc: 'Drivers deliver your order and get paid instantly. Farmers can post for seasonal help. All in one place.' },
 ]
 
+const VARIETY = [
+  { src: '/images/produce-handoff.png', alt: 'Handing off a box of fresh vegetables', label: 'Produce' },
+  { src: '/images/butcher-board.png', alt: 'Cuts of meat on a butcher board', label: 'Meat' },
+  { src: '/images/flower-field.png', alt: 'Rows of colorful flowers', label: 'Flowers' },
+  { src: '/images/lavender-soap.png', alt: 'Handmade lavender soap', label: 'Specialty Goods' },
+]
+
 export default function Home() {
   return (
     <main style={{ fontFamily: 'Georgia, serif' }}>
@@ -46,6 +53,19 @@ export default function Home() {
               <div style={{ fontSize: 36, marginBottom: 12 }}>{f.icon}</div>
               <h3 style={{ color: '#8B1A1A', fontSize: '1.05rem', marginBottom: 8 }}>{f.title}</h3>
               <p style={{ color: '#5D4E37', fontSize: '0.9rem', lineHeight: 1.5 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2rem 4rem' }}>
+        <h2 style={{ textAlign: 'center', color: '#8B1A1A', fontSize: '1.8rem', marginBottom: 32 }}>From the fields to your table</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+          {VARIETY.map(v => (
+            <div key={v.label} style={{ position: 'relative', height: 180, borderRadius: 12, overflow: 'hidden' }}>
+              <Image src={v.src} alt={v.alt} fill style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.6))' }} />
+              <span style={{ position: 'absolute', bottom: 10, left: 14, color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>{v.label}</span>
             </div>
           ))}
         </div>

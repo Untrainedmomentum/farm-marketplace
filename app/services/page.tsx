@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 const SERVICE_CATEGORIES = ['Farm Sitting', 'Farm Help', 'Farrier', 'Butcher', 'Veterinary', 'Equipment Repair', 'Fencing', 'Other']
@@ -108,6 +109,9 @@ export default function ServicesPage() {
 
   return (
     <main style={{ padding: 40, fontFamily: 'Georgia, serif', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ position: 'relative', height: 160, borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <Image src="/images/goats-feeding.png" alt="Feeding goats on a farm" fill style={{ objectFit: 'cover' }} />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ color: 'var(--barn-red)' }}>Farm Services</h1>
         <button onClick={() => setShowForm(!showForm)}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { distanceMiles } from '@/lib/geocode'
+import Image from 'next/image'
 import Link from 'next/link'
 
 const CATEGORY_OPTIONS = ['Produce', 'Baked Goods', 'Dairy', 'Meat', 'Eggs', 'Flowers', 'Other']
@@ -63,6 +64,9 @@ export default function Marketplace() {
 
   return (
     <main style={{ padding: 40, maxWidth: 1100, margin: '0 auto', fontFamily: 'Georgia, serif' }}>
+      <div style={{ position: 'relative', height: 200, borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <Image src="/images/bakery-market-stall.png" alt="A market stall with fresh baked goods and preserves" fill style={{ objectFit: 'cover' }} />
+      </div>
       <h1 style={{ color: '#8B1A1A', fontSize: 36, marginBottom: 8 }}>Farm Marketplace</h1>
       <p style={{ color: '#5D4E37', marginBottom: 24, fontSize: 16 }}>Shop fresh products directly from local farms</p>
 

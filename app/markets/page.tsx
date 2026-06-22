@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 type Market = {
@@ -73,6 +74,9 @@ export default function MarketsPage() {
 
   return (
     <main style={{ padding: 40, fontFamily: 'Georgia, serif', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ position: 'relative', height: 160, borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <Image src="/images/farm-market-stand.png" alt="A farm market stand" fill style={{ objectFit: 'cover' }} />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ color: 'var(--barn-red)' }}>Farm Markets</h1>
         <button onClick={() => setShowForm(!showForm)}
