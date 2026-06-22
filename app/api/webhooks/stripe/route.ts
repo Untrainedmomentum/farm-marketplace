@@ -22,10 +22,11 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.user_id
+    const farmId = session.metadata?.farm_id
     const paymentIntentId = session.payment_intent as string | null
     const supabaseAdmin = getSupabaseAdmin()
 
-    if (userId && paymentIntentId) {
+    if (userId && farmId && paymentIntentId) {
       const { data: existing } = await supabaseAdmin
         .from('orders')
         .select('id')
@@ -37,6 +38,13 @@ export async function POST(request: NextRequest) {
           .from('cart_items')
           .select('product_id, farm_id, quantity, product:products(price)')
           .eq('user_id', userId)
+          .eq('farm_id', farmId)
+
+        const { data: farm } = await supabaseAdmin
+          .from('farms')
+          .select('subscription_active')
+          .eq('id', farmId)
+          .single()
 
         if (cartItems?.length) {
           const { data: order } = await supabaseAdmin
@@ -44,7 +52,7 @@ export async function POST(request: NextRequest) {
             .insert({
               buyer_id: userId,
               total: (session.amount_total ?? 0) / 100,
-              platform_fee: 0,
+              platform_fee: farm?.subscription_active ? 0 : 3,
               status: 'paid',
               stripe_payment_intent_id: paymentIntentId,
             })
@@ -61,7 +69,7 @@ export async function POST(request: NextRequest) {
                 price: (item.product as unknown as { price: number }).price,
               }))
             )
-            await supabaseAdmin.from('cart_items').delete().eq('user_id', userId)
+            await supabaseAdmin.from('cart_items').delete().eq('user_id', userId).eq('farm_id', farmId)
           }
         }
       }

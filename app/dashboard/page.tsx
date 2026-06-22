@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [productQty, setProductQty] = useState('')
   const [message, setMessage] = useState('')
   const [becomingFarmer, setBecomingFarmer] = useState(false)
+  const [connectingStripe, setConnectingStripe] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -71,6 +72,23 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  async function connectStripe() {
+    setConnectingStripe(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setConnectingStripe(false); return }
+    const res = await fetch('/api/connect/onboard', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || !data.url) {
+      setMessage(data.error || 'Could not start Stripe onboarding.')
+      setConnectingStripe(false)
+      return
+    }
+    window.location.href = data.url
+  }
+
   if (loading) return <main style={{ padding: 40, fontFamily: 'Georgia, serif' }}><p>Loading...</p></main>
 
   const isFarmer = profile?.role?.includes('farmer')
@@ -121,10 +139,20 @@ export default function Dashboard() {
                   Storefront: <a href={'/farm/' + farm.slug} style={{ color: 'var(--barn-red)' }}>/farm/{farm.slug}</a>
                 </p>
               </div>
-              <button onClick={() => router.push('/edit-store')}
-                style={{ backgroundColor: '#F0C040', color: '#2C1810', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                🎨 Edit My Storefront
-              </button>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                {farm.stripe_account_id ? (
+                  <span style={{ color: 'var(--green)', fontWeight: 'bold', fontSize: '0.9rem' }}>✅ Stripe connected</span>
+                ) : (
+                  <button onClick={connectStripe} disabled={connectingStripe}
+                    style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold', fontSize: '0.95rem', opacity: connectingStripe ? 0.7 : 1 }}>
+                    {connectingStripe ? 'Connecting...' : '💳 Connect Stripe to get paid'}
+                  </button>
+                )}
+                <button onClick={() => router.push('/edit-store')}
+                  style={{ backgroundColor: '#F0C040', color: '#2C1810', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                  🎨 Edit My Storefront
+                </button>
+              </div>
             </div>
           </div>
 
