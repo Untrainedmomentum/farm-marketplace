@@ -245,10 +245,10 @@ export default function Dashboard() {
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #eee' }}>
             <h3 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Need a hand on the farm?</h3>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>Post a listing to find helpers in the community.</p>
-            <button onClick={() => router.push('/helpers')}
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>Find or post farm help, farriers, sitters, and other services.</p>
+            <button onClick={() => router.push('/services')}
               style={{ backgroundColor: '#F0C040', color: '#2C1810', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
-              🙋 Find Helpers →
+              🙋 Find Services →
             </button>
           </div>
         </div>

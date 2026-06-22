@@ -99,10 +99,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
+  if (event.type === 'account.updated') {
+    const account = event.data.object as Stripe.Account
+    const supabaseAdmin = getSupabaseAdmin()
+    await supabaseAdmin.from('farms').update({ payouts_enabled: !!account.payouts_enabled }).eq('stripe_account_id', account.id)
+    return NextResponse.json({ received: true })
+  }
+
+  if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription
+    const supabaseAdmin = getSupabaseAdmin()
+    const isActive = event.type === 'customer.subscription.updated' && (subscription.status === 'active' || subscription.status === 'trialing')
+    if (!isActive) {
+      await supabaseAdmin.from('farms').update({ subscription_tier: 'free' }).eq('stripe_subscription_id', subscription.id)
+    }
+    return NextResponse.json({ received: true })
+  }
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const paymentIntentId = session.payment_intent as string | null
     const supabaseAdmin = getSupabaseAdmin()
+
+    if (session.mode === 'subscription') {
+      const farmId = session.metadata?.farm_id
+      const tier = session.metadata?.tier
+      if (farmId && tier) {
+        await supabaseAdmin.from('farms').update({
+          subscription_tier: tier,
+          stripe_subscription_id: session.subscription as string,
+        }).eq('id', farmId)
+      }
+      return NextResponse.json({ received: true })
+    }
 
     if (session.metadata?.type === 'delivery') {
       const driverId = session.metadata.driver_id

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin, syncPayoutSchedule } from '@/lib/stripeAdmin'
+import { getStripeAdmin, syncPayoutSchedule, getFarmTierLimits } from '@/lib/stripeAdmin'
 
 const SERVICE_FEE_CENTS = 300
-const NEW_SELLER_WINDOW_DAYS = 30
-const NEW_SELLER_MAX_CENTS = 20000
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -36,7 +34,7 @@ export async function POST(request: NextRequest) {
   const farmIds = [...new Set(cartItems.map(item => item.farm_id))]
   const { data: farms, error: farmsError } = await supabase
     .from('farms')
-    .select('id, name, stripe_account_id, created_at')
+    .select('id, name, stripe_account_id, subscription_tier, payouts_enabled')
     .in('id', farmIds)
 
   if (farmsError || !farms || farms.length !== farmIds.length) {
@@ -59,11 +57,10 @@ export async function POST(request: NextRequest) {
 
   for (const [farmId, subtotalCents] of subtotalsByFarm) {
     const farm = farmsById.get(farmId)!
-    const accountAgeDays = (Date.now() - new Date(farm.created_at).getTime()) / 86400000
-    const isTrusted = accountAgeDays >= NEW_SELLER_WINDOW_DAYS
-    if (!isTrusted && subtotalCents > NEW_SELLER_MAX_CENTS) {
+    const { capCents } = getFarmTierLimits(farm.subscription_tier, farm.payouts_enabled)
+    if (capCents != null && subtotalCents > capCents) {
       return NextResponse.json({
-        error: `${farm.name} is a new seller and is limited to $${NEW_SELLER_MAX_CENTS / 100} per order for their first ${NEW_SELLER_WINDOW_DAYS} days. Please check out their items separately in a smaller order.`,
+        error: `${farm.name} is limited to $${capCents / 100} per order on their current plan. Please check out their items separately in a smaller order, or ask them to upgrade.`,
       }, { status: 400 })
     }
   }
@@ -104,8 +101,8 @@ export async function POST(request: NextRequest) {
   })
 
   for (const farm of farms) {
-    const accountAgeDays = (Date.now() - new Date(farm.created_at).getTime()) / 86400000
-    await syncPayoutSchedule(stripe, farm.stripe_account_id!, accountAgeDays >= NEW_SELLER_WINDOW_DAYS)
+    const { delayDays } = getFarmTierLimits(farm.subscription_tier, farm.payouts_enabled)
+    await syncPayoutSchedule(stripe, farm.stripe_account_id!, delayDays)
   }
 
   return NextResponse.json({ url: session.url })
