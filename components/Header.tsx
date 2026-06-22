@@ -49,8 +49,7 @@ export default function Header() {
       <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
         <Link href="/marketplace" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Marketplace</Link>
         <Link href="/map" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Map</Link>
-        <Link href="/markets" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Markets</Link>
-        <Link href="/farmstands" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Farm Stands</Link>
+        <Link href="/markets" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Markets &amp; Stands</Link>
         <Link href="/events" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Events</Link>
         <Link href="/csa" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>CSAs</Link>
         <Link href="/drivers" style={{ color: '#F5E6C8', textDecoration: 'none', fontFamily: 'Georgia, serif' }}>Drivers</Link>

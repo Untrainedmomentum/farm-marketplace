@@ -37,15 +37,13 @@ const standIcon = new L.Icon({
 })
 
 type Farm = { id: string; name: string; slug: string; lat: number | null; lng: number | null }
-type Market = { id: string; name: string; address: string; lat: number | null; lng: number | null }
+type Market = { id: string; name: string; address: string; lat: number | null; lng: number | null; type: 'market' | 'stand'; farm_id: string | null }
 type FarmEvent = { id: string; title: string; address: string; lat: number | null; lng: number | null }
-type FarmStand = { id: string; name: string; address: string; lat: number | null; lng: number | null; farm_id: string | null }
 
 export default function MapView() {
   const [farms, setFarms] = useState<Farm[]>([])
   const [markets, setMarkets] = useState<Market[]>([])
   const [events, setEvents] = useState<FarmEvent[]>([])
-  const [stands, setStands] = useState<FarmStand[]>([])
   const [zip, setZip] = useState('')
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null)
   const [searching, setSearching] = useState(false)
@@ -53,9 +51,8 @@ export default function MapView() {
 
   useEffect(() => {
     supabase.from('farms').select('id, name, slug, lat, lng').then(({ data }) => setFarms(data || []))
-    supabase.from('markets').select('id, name, address, lat, lng').then(({ data }) => setMarkets(data || []))
+    supabase.from('markets').select('id, name, address, lat, lng, type, farm_id').then(({ data }) => setMarkets(data || []))
     supabase.from('events').select('id, title, address, lat, lng').then(({ data }) => setEvents(data || []))
-    supabase.from('farm_stands').select('id, name, address, lat, lng, farm_id').then(({ data }) => setStands(data || []))
   }, [])
 
   async function handleLocate(e: React.FormEvent) {
@@ -106,11 +103,22 @@ export default function MapView() {
           </Popup>
         </Marker>
       ))}
-      {markets.filter(m => m.lat && m.lng && withinRadius(m.lat, m.lng)).map(m => (
+      {markets.filter(m => m.lat && m.lng && withinRadius(m.lat, m.lng) && m.type === 'market').map(m => (
         <Marker key={`market-${m.id}`} position={[m.lat!, m.lng!]} icon={marketIcon}>
           <Popup>
             🧺 <strong>{m.name}</strong><br />
             {m.address}
+          </Popup>
+        </Marker>
+      ))}
+      {markets.filter(m => m.lat && m.lng && withinRadius(m.lat, m.lng) && m.type === 'stand').map(m => (
+        <Marker key={`stand-${m.id}`} position={[m.lat!, m.lng!]} icon={standIcon}>
+          <Popup>
+            🧑‍🌾 <strong>{m.name}</strong><br />
+            {m.address}<br />
+            {m.farm_id
+              ? <span style={{ color: 'green' }}>✅ Claimed by a MyFarmExpress farm</span>
+              : <span style={{ color: '#888', fontSize: 12 }}>Not a MyFarmExpress-verified farm. <Link href="/markets">Is this your stand?</Link></span>}
           </Popup>
         </Marker>
       ))}
@@ -119,17 +127,6 @@ export default function MapView() {
           <Popup>
             📅 <strong>{e.title}</strong><br />
             {e.address}
-          </Popup>
-        </Marker>
-      ))}
-      {stands.filter(s => s.lat && s.lng && withinRadius(s.lat, s.lng)).map(s => (
-        <Marker key={`stand-${s.id}`} position={[s.lat!, s.lng!]} icon={standIcon}>
-          <Popup>
-            🧑‍🌾 <strong>{s.name}</strong><br />
-            {s.address}<br />
-            {s.farm_id
-              ? <span style={{ color: 'green' }}>✅ Claimed by a MyFarmExpress farm</span>
-              : <span style={{ color: '#888', fontSize: 12 }}>Not a MyFarmExpress-verified farm. <Link href="/farmstands">Is this your stand?</Link></span>}
           </Popup>
         </Marker>
       ))}

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
   }
 
-  const { name, address, description, scheduleText, farmId } = await request.json()
+  const { name, address, description, scheduleText, farmId, type, county, hoursText, website, contactInfo, notes } = await request.json()
   if (!name || !address) {
     return NextResponse.json({ error: 'Name and address are required' }, { status: 400 })
   }
@@ -32,8 +32,14 @@ export async function POST(request: NextRequest) {
     .insert({
       name,
       address,
+      type: type === 'stand' ? 'stand' : 'market',
       description: description || null,
       schedule_text: scheduleText || null,
+      hours_text: hoursText || null,
+      website: website || null,
+      contact_info: contactInfo || null,
+      notes: notes || null,
+      county: county || null,
       farm_id: farmId || null,
       created_by: user.id,
       lat: coords?.lat ?? null,
