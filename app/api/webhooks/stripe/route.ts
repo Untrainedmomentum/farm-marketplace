@@ -19,6 +19,56 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
+  if (event.type === 'charge.dispute.created') {
+    const dispute = event.data.object as Stripe.Dispute
+    const stripe = getStripeAdmin()
+    const supabaseAdmin = getSupabaseAdmin()
+    const chargeId = dispute.charge as string
+    const charge = await stripe.charges.retrieve(chargeId)
+    const transferId = charge.transfer as string | null
+
+    if (transferId) {
+      const transfer = await stripe.transfers.retrieve(transferId)
+      const reverseAmount = Math.min(dispute.amount, transfer.amount)
+      try {
+        await stripe.transfers.createReversal(transferId, { amount: reverseAmount })
+      } catch (err) {
+        console.error('Transfer reversal failed (connected account balance likely insufficient):', err)
+      }
+    }
+
+    const paymentIntentId = charge.payment_intent as string | null
+    if (paymentIntentId) {
+      await supabaseAdmin.from('orders').update({ status: 'disputed' }).eq('stripe_payment_intent_id', paymentIntentId)
+      await supabaseAdmin.from('deliveries').update({ status: 'disputed' }).eq('stripe_payment_intent_id', paymentIntentId)
+    }
+
+    return NextResponse.json({ received: true })
+  }
+
+  if (event.type === 'charge.dispute.closed') {
+    const dispute = event.data.object as Stripe.Dispute
+    const stripe = getStripeAdmin()
+    const chargeId = dispute.charge as string
+    const charge = await stripe.charges.retrieve(chargeId)
+    const transferId = charge.transfer as string | null
+
+    if (dispute.status === 'won' && transferId) {
+      const transfer = await stripe.transfers.retrieve(transferId)
+      const amountReversed = transfer.amount_reversed ?? 0
+      if (amountReversed > 0) {
+        await stripe.transfers.create({
+          amount: amountReversed,
+          currency: transfer.currency,
+          destination: transfer.destination as string,
+          source_transaction: chargeId,
+        })
+      }
+    }
+
+    return NextResponse.json({ received: true })
+  }
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const paymentIntentId = session.payment_intent as string | null
