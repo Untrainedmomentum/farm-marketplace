@@ -5,8 +5,8 @@
 - Tagline: Fresh From The Farm
 - Location: C:\Users\jenbr\farm-marketplace
 - GitHub: https://github.com/Untrainedmomentum/farm-marketplace
-- Supabase URL: https://qfcsmuwukppkoyfpuhhh.supabase.co
-- Supabase Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmY3NtdXd1a3Bwa295ZnB1aGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MjIzNDQsImV4cCI6MjA5Njk5ODM0NH0.m_e07q5RETBdqT3xWxjpcHzZgkKRxFNfSZpI9rq6SpI
+- Supabase URL: (See .env.local or Vercel environment variables)
+- Supabase Anon Key: (See .env.local or Vercel environment variables)
 
 ## STACK
 - Next.js 16.2.9 (App Router, Turbopack)
