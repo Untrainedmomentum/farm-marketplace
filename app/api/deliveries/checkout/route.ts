@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin } from '@/lib/stripeAdmin'
+import { getStripeAdmin, PLATFORM_FEE_CENTS } from '@/lib/stripeAdmin'
 
 const NEW_SELLER_WINDOW_DAYS = 30
 const NEW_SELLER_MAX_CENTS = 20000
-const FREE_TIER_FEE_CENTS = 500
-const SUBSCRIBED_FEE_CENTS = 100
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -32,7 +30,7 @@ export async function POST(request: NextRequest) {
 
   const { data: driver, error } = await supabase
     .from('drivers')
-    .select('id, name, delivery_rate, stripe_account_id, active, created_at, subscribed')
+    .select('id, name, delivery_rate, stripe_account_id, active, created_at')
     .eq('id', driverId)
     .single()
 
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
     }],
     payment_intent_data: {
       transfer_data: { destination: driver.stripe_account_id },
-      application_fee_amount: driver.subscribed ? SUBSCRIBED_FEE_CENTS : FREE_TIER_FEE_CENTS,
+      application_fee_amount: PLATFORM_FEE_CENTS,
     },
     success_url: `${origin}/delivery-dashboard?delivery_session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/drivers`,

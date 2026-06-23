@@ -17,8 +17,6 @@ export default function Dashboard() {
   const [message, setMessage] = useState('')
   const [becomingFarmer, setBecomingFarmer] = useState(false)
   const [connectingStripe, setConnectingStripe] = useState(false)
-  const [upgrading, setUpgrading] = useState(false)
-  const [openingPortal, setOpeningPortal] = useState(false)
   const [csaPrograms, setCsaPrograms] = useState<any[]>([])
   const [csaName, setCsaName] = useState('')
   const [csaContents, setCsaContents] = useState('')
@@ -96,41 +94,6 @@ export default function Dashboard() {
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/')
-  }
-
-  async function upgrade(tier: 'paid' | 'premium') {
-    setUpgrading(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setUpgrading(false); return }
-    const res = await fetch('/api/subscribe', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier }),
-    })
-    const data = await res.json()
-    if (!res.ok || !data.url) {
-      setMessage(data.error || 'Could not start checkout.')
-      setUpgrading(false)
-      return
-    }
-    window.location.href = data.url
-  }
-
-  async function openBillingPortal() {
-    setOpeningPortal(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setOpeningPortal(false); return }
-    const res = await fetch('/api/billing-portal', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-    const data = await res.json()
-    if (!res.ok || !data.url) {
-      setMessage(data.error || 'Could not open billing portal.')
-      setOpeningPortal(false)
-      return
-    }
-    window.location.href = data.url
   }
 
   async function connectStripe() {
@@ -218,31 +181,13 @@ export default function Dashboard() {
           </div>
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>
-            <h3 style={{ color: 'var(--barn-red)', marginBottom: '0.25rem' }}>Your Plan</h3>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-              Current plan: <strong style={{ textTransform: 'capitalize' }}>{farm.subscription_tier}</strong>
-              {!farm.payouts_enabled && ' — finish connecting Stripe to unlock paid plan limits'}
+            <h3 style={{ color: 'var(--barn-red)', marginBottom: '0.25rem' }}>Selling on My Farm Express</h3>
+            <p style={{ color: '#666', fontSize: '0.9rem' }}>
+              No subscriptions — listing is free. A flat $2 platform fee applies per transaction.{' '}
+              {farm.payouts_enabled
+                ? '✅ Stripe connected: $150 per order limit, 3-day payout hold.'
+                : 'Connect Stripe to raise your order limit to $150 and your payout hold to 3 days (currently $50 / 7-day hold).'}
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              {farm.subscription_tier === 'free' && (
-                <button onClick={() => upgrade('paid')} disabled={upgrading}
-                  style={{ backgroundColor: 'var(--green)', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
-                  {upgrading ? 'Redirecting...' : 'Upgrade to Paid — $15/mo ($150/order limit, 3-day hold)'}
-                </button>
-              )}
-              {farm.subscription_tier !== 'premium' && (
-                <button onClick={() => upgrade('premium')} disabled={upgrading}
-                  style={{ backgroundColor: '#8B1A1A', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontWeight: 'bold' }}>
-                  {upgrading ? 'Redirecting...' : 'Upgrade to Premium — $50/mo (no limits, fastest payouts)'}
-                </button>
-              )}
-              {farm.stripe_customer_id && (
-                <button onClick={openBillingPortal} disabled={openingPortal}
-                  style={{ background: 'none', border: '1px solid #ccc', color: '#666', padding: '0.6rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-                  {openingPortal ? 'Opening...' : 'Manage Billing'}
-                </button>
-              )}
-            </div>
           </div>
 
           <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', border: '1px solid #eee' }}>

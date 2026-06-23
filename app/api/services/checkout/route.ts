@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin } from '@/lib/stripeAdmin'
-
-const FREE_TIER_FEE_CENTS = 500
-const SUBSCRIBED_FEE_CENTS = 100
+import { getStripeAdmin, PLATFORM_FEE_CENTS } from '@/lib/stripeAdmin'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -30,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   const { data: service, error } = await supabase
     .from('farm_services')
-    .select('id, provider_name, booking_rate, stripe_account_id, active, subscribed')
+    .select('id, provider_name, booking_rate, stripe_account_id, active')
     .eq('id', serviceId)
     .single()
 
@@ -58,7 +55,7 @@ export async function POST(request: NextRequest) {
     }],
     payment_intent_data: {
       transfer_data: { destination: service.stripe_account_id },
-      application_fee_amount: service.subscribed ? SUBSCRIBED_FEE_CENTS : FREE_TIER_FEE_CENTS,
+      application_fee_amount: PLATFORM_FEE_CENTS,
     },
     success_url: `${origin}/services?booking_session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/services`,

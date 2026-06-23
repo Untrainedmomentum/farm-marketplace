@@ -15,7 +15,6 @@ type FarmService = {
   contact_info: string | null
   booking_rate: number | null
   stripe_account_id: string | null
-  subscribed: boolean
   created_by: string
 }
 
@@ -194,8 +193,8 @@ export default function ServicesPage() {
               </button>
             )}
             {isMine && s.stripe_account_id && (
-              <p style={{ fontSize: '0.8rem', color: s.subscribed ? 'var(--green)' : '#888' }}>
-                {s.subscribed ? '✅ Subscribed — $1 fee per booking' : '$5 fee per booking on the free plan ($1 if subscribed)'}
+              <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                No subscription — a flat $2 platform fee applies per booking.
               </p>
             )}
             {!isMine && s.booking_rate != null && s.stripe_account_id && (

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const SERVICE_FEE = 3
+const SERVICE_FEE = 2
 
 type CartItem = {
   id: string

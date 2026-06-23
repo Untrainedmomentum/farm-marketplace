@@ -109,44 +109,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
-    const subscription = event.data.object as Stripe.Subscription
-    const supabaseAdmin = getSupabaseAdmin()
-    const isActive = event.type === 'customer.subscription.updated' && (subscription.status === 'active' || subscription.status === 'trialing')
-    if (!isActive) {
-      await supabaseAdmin.from('farms').update({ subscription_tier: 'free' }).eq('stripe_subscription_id', subscription.id)
-      await supabaseAdmin.from('drivers').update({ subscribed: false }).eq('stripe_subscription_id', subscription.id)
-      await supabaseAdmin.from('farm_services').update({ subscribed: false }).eq('stripe_subscription_id', subscription.id)
-    }
-    return NextResponse.json({ received: true })
-  }
-
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const paymentIntentId = session.payment_intent as string | null
     const supabaseAdmin = getSupabaseAdmin()
-
-    if (session.mode === 'subscription') {
-      const entity = session.metadata?.entity
-      const subscriptionId = session.subscription as string
-      if (entity === 'farm' && session.metadata?.farm_id && session.metadata?.tier) {
-        await supabaseAdmin.from('farms').update({
-          subscription_tier: session.metadata.tier,
-          stripe_subscription_id: subscriptionId,
-        }).eq('id', session.metadata.farm_id)
-      } else if (entity === 'driver' && session.metadata?.driver_id) {
-        await supabaseAdmin.from('drivers').update({
-          subscribed: true,
-          stripe_subscription_id: subscriptionId,
-        }).eq('id', session.metadata.driver_id)
-      } else if (entity === 'service' && session.metadata?.service_id) {
-        await supabaseAdmin.from('farm_services').update({
-          subscribed: true,
-          stripe_subscription_id: subscriptionId,
-        }).eq('id', session.metadata.service_id)
-      }
-      return NextResponse.json({ received: true })
-    }
 
     if (session.metadata?.type === 'service_booking') {
       const serviceId = session.metadata.service_id
@@ -229,7 +195,7 @@ export async function POST(request: NextRequest) {
             .insert({
               buyer_id: userId,
               total: (session.amount_total ?? 0) / 100,
-              platform_fee: 3,
+              platform_fee: 2,
               status: 'paid',
               stripe_payment_intent_id: paymentIntentId,
             })

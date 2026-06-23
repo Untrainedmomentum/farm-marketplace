@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin, syncPayoutSchedule, getFarmTierLimits } from '@/lib/stripeAdmin'
-
-const SERVICE_FEE_CENTS = 300
+import { getStripeAdmin, syncPayoutSchedule, getFarmLimits, PLATFORM_FEE_CENTS } from '@/lib/stripeAdmin'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -34,7 +32,7 @@ export async function POST(request: NextRequest) {
   const farmIds = [...new Set(cartItems.map(item => item.farm_id))]
   const { data: farms, error: farmsError } = await supabase
     .from('farms')
-    .select('id, name, stripe_account_id, subscription_tier, payouts_enabled')
+    .select('id, name, stripe_account_id, payouts_enabled')
     .in('id', farmIds)
 
   if (farmsError || !farms || farms.length !== farmIds.length) {
@@ -57,10 +55,10 @@ export async function POST(request: NextRequest) {
 
   for (const [farmId, subtotalCents] of subtotalsByFarm) {
     const farm = farmsById.get(farmId)!
-    const { capCents } = getFarmTierLimits(farm.subscription_tier, farm.payouts_enabled)
-    if (capCents != null && subtotalCents > capCents) {
+    const { capCents } = getFarmLimits(farm.payouts_enabled)
+    if (subtotalCents > capCents) {
       return NextResponse.json({
-        error: `${farm.name} is limited to $${capCents / 100} per order on their current plan. Please check out their items separately in a smaller order, or ask them to upgrade.`,
+        error: `${farm.name} is limited to $${capCents / 100} per order until they finish connecting Stripe. Please check out their items separately in a smaller order.`,
       }, { status: 400 })
     }
   }
@@ -87,7 +85,7 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'usd',
           product_data: { name: 'Service fee' },
-          unit_amount: SERVICE_FEE_CENTS,
+          unit_amount: PLATFORM_FEE_CENTS,
         },
         quantity: 1,
       },
@@ -101,7 +99,7 @@ export async function POST(request: NextRequest) {
   })
 
   for (const farm of farms) {
-    const { delayDays } = getFarmTierLimits(farm.subscription_tier, farm.payouts_enabled)
+    const { delayDays } = getFarmLimits(farm.payouts_enabled)
     await syncPayoutSchedule(stripe, farm.stripe_account_id!, delayDays)
   }
 

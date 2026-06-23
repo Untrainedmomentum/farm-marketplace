@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getStripeAdmin, syncPayoutSchedule, getFarmTierLimits } from '@/lib/stripeAdmin'
+import { getStripeAdmin, syncPayoutSchedule, getFarmLimits } from '@/lib/stripeAdmin'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const { data: farm, error } = await supabase
     .from('farms')
-    .select('id, stripe_account_id, subscription_tier, payouts_enabled')
+    .select('id, stripe_account_id, payouts_enabled')
     .eq('owner_id', user.id)
     .single()
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('farms').update({ stripe_account_id: accountId }).eq('id', farm.id)
   }
 
-  const { delayDays } = getFarmTierLimits(farm.subscription_tier, farm.payouts_enabled)
+  const { delayDays } = getFarmLimits(farm.payouts_enabled)
   await syncPayoutSchedule(stripe, accountId, delayDays)
 
   const origin = request.headers.get('origin') || new URL(request.url).origin
