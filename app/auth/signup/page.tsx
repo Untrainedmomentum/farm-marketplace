@@ -67,99 +67,185 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Georgia, serif' }}>
-      <div style={{ backgroundColor: 'white', padding: '2.5rem', borderRadius: '8px', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '420px' }}>
-        <h1 style={{ color: 'var(--barn-red)', marginBottom: '0.25rem', fontSize: '1.8rem' }}>Join My Farm Express</h1>
-        <p style={{ color: '#666', marginBottom: '2rem', fontSize: '0.9rem' }}>Fresh from the farm, straight to you.</p>
+    <main className="min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2" style={{ color: '#8B1A1A' }}>
+            Join My Farm Express
+          </h1>
+          <p className="text-gray-600">Fresh from the farm, straight to you</p>
+        </div>
 
-        <form onSubmit={handleSignup}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#444', fontSize: '0.9rem' }}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={{ width: '100%', padding: '0.6rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', color: '#444', fontSize: '0.9rem' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', padding: '0.6rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.75rem', color: '#444', fontSize: '0.9rem', fontWeight: 'bold' }}>I am a... (select all that apply)</label>
-
-            {[
-              { value: 'farmer', label: '🌾 Farmer', desc: 'I want to sell farm products' },
-              { value: 'customer', label: '🛒 Shopper', desc: 'I want to buy farm products' },
-              { value: 'delivery', label: '🚚 Delivery Provider', desc: 'I want to deliver orders' },
-            ].map(({ value, label, desc }) => (
-              <div
-                key={value}
-                onClick={() => toggleRole(value)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.75rem',
-                  marginBottom: '0.5rem',
-                  border: `2px solid ${roles.includes(value) ? 'var(--barn-red)' : '#ddd'}`,
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  backgroundColor: roles.includes(value) ? '#fff5f5' : 'white',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={roles.includes(value)}
-                  onChange={() => toggleRole(value)}
-                  style={{ accentColor: 'var(--barn-red)', width: '16px', height: '16px' }}
-                />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{label}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '1rem', cursor: 'pointer' }}>
-            <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
-              style={{ marginTop: '0.2rem', width: '16px', height: '16px', accentColor: 'var(--barn-red)' }} />
-            <span style={{ fontSize: '0.8rem', color: '#666' }}>
-              I agree to the <Link href="/terms" target="_blank" style={{ color: 'var(--barn-red)' }}>Terms of Service</Link>,{' '}
-              <Link href="/privacy" target="_blank" style={{ color: 'var(--barn-red)' }}>Privacy Policy</Link>, and{' '}
-              <Link href="/fees" target="_blank" style={{ color: 'var(--barn-red)' }}>Fees</Link>.
-            </span>
-          </label>
-
+        {/* Card */}
+        <div 
+          className="rounded-lg shadow-lg p-8 border-2"
+          style={{ 
+            backgroundColor: '#FFFDF5',
+            borderColor: '#F5E6C8'
+          }}
+        >
+          {/* Error Message */}
           {error && (
-            <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>
+            <div 
+              className="mb-6 p-4 rounded-lg border-l-4"
+              style={{ 
+                backgroundColor: '#FEE2E2',
+                borderColor: '#8B1A1A',
+                color: '#7F1D1D'
+              }}
+            >
+              <p className="font-semibold text-sm">{error}</p>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '0.75rem', backgroundColor: 'var(--barn-red)', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', fontFamily: 'Georgia, serif', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
-          >
-            {loading ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
+          {/* Form */}
+          <form onSubmit={handleSignup} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: '#2C1810' }}>
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 border-2 rounded-lg transition focus:outline-none"
+                style={{
+                  borderColor: '#F5E6C8',
+                  color: '#2C1810',
+                  backgroundColor: '#FFFDF5'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#8B1A1A'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#F5E6C8'}
+              />
+            </div>
 
-        <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#666' }}>
-          Already have an account? <Link href="/auth/login" style={{ color: 'var(--barn-red)' }}>Log in</Link>
-        </p>
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold mb-2" style={{ color: '#2C1810' }}>
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 border-2 rounded-lg transition focus:outline-none"
+                style={{
+                  borderColor: '#F5E6C8',
+                  color: '#2C1810',
+                  backgroundColor: '#FFFDF5'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#8B1A1A'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#F5E6C8'}
+              />
+            </div>
+
+            {/* Roles */}
+            <div>
+              <label className="block text-sm font-semibold mb-3" style={{ color: '#2C1810' }}>
+                I am a... (select all that apply)
+              </label>
+              <div className="space-y-2">
+                {[
+                  { value: 'farmer', label: '🌾 Farmer', desc: 'I want to sell farm products' },
+                  { value: 'customer', label: '🛒 Shopper', desc: 'I want to buy farm products' },
+                  { value: 'delivery', label: '🚚 Delivery Provider', desc: 'I want to deliver orders' },
+                ].map(({ value, label, desc }) => (
+                  <div
+                    key={value}
+                    onClick={() => toggleRole(value)}
+                    className="p-3 border-2 rounded-lg cursor-pointer transition duration-150"
+                    style={{
+                      borderColor: roles.includes(value) ? '#8B1A1A' : '#F5E6C8',
+                      backgroundColor: roles.includes(value) ? '#FEE2E2' : '#FFFDF5',
+                    }}
+                  >
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={roles.includes(value)}
+                        onChange={() => toggleRole(value)}
+                        className="w-4 h-4"
+                        style={{ accentColor: '#8B1A1A' }}
+                      />
+                      <div>
+                        <div className="font-semibold text-sm" style={{ color: '#2C1810' }}>{label}</div>
+                        <div className="text-xs text-gray-600">{desc}</div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Terms Agreement */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={e => setAgreedToTerms(e.target.checked)}
+                id="terms"
+                className="mt-1 w-4 h-4"
+                style={{ accentColor: '#8B1A1A' }}
+              />
+              <label htmlFor="terms" className="text-xs text-gray-600 cursor-pointer">
+                I agree to the{' '}
+                <Link href="/terms" target="_blank" className="hover:underline" style={{ color: '#8B1A1A' }}>
+                  Terms of Service
+                </Link>
+                , <Link href="/privacy" target="_blank" className="hover:underline" style={{ color: '#8B1A1A' }}>
+                  Privacy Policy
+                </Link>
+                , and{' '}
+                <Link href="/fees" target="_blank" className="hover:underline" style={{ color: '#8B1A1A' }}>
+                  Fees
+                </Link>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-lg font-semibold text-white transition duration-200"
+              style={{
+                backgroundColor: loading ? '#C4622D' : '#8B1A1A',
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="my-6 flex items-center">
+            <div className="flex-1 border-t-2" style={{ borderColor: '#F5E6C8' }}></div>
+            <span className="px-3 text-sm text-gray-500">or</span>
+            <div className="flex-1 border-t-2" style={{ borderColor: '#F5E6C8' }}></div>
+          </div>
+
+          {/* Login Link */}
+          <p className="text-center text-sm">
+            Already have an account?{' '}
+            <Link
+              href="/auth/login"
+              className="font-semibold hover:underline"
+              style={{ color: '#8B1A1A' }}
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }
