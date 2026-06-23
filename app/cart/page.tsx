@@ -25,6 +25,7 @@ export default function Cart() {
   const [loading, setLoading] = useState(true)
   const [checkingOut, setCheckingOut] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
+  const [isGuest, setIsGuest] = useState(false)
 
   useEffect(() => {
     loadCart()
@@ -33,6 +34,7 @@ export default function Cart() {
   async function loadCart() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
+    setIsGuest(!!user.is_anonymous)
     const { data } = await supabase
       .from('cart_items')
       .select('*, product:products(name, price, description), farm:farms(name, slug)')
@@ -95,6 +97,11 @@ export default function Cart() {
   return (
     <main style={{ padding: 40 }}>
       <h1>Your Cart</h1>
+      {isGuest && (
+        <p style={{ background: '#FFF8E1', border: '1px solid #F0C040', borderRadius: 8, padding: '0.75rem 1rem', fontSize: '0.9rem', color: '#5D4E37', marginBottom: '1.5rem' }}>
+          🛒 You're checking out as a guest. <a href="/auth/signup" style={{ color: 'var(--barn-red)', fontWeight: 'bold' }}>Create a free account</a> to track your orders and reorder faster next time.
+        </p>
+      )}
       {checkoutError && <p style={{ color: 'red' }}>{checkoutError}</p>}
       {Object.values(grouped).map((group: any) => {
         const subtotal = group.items.reduce((sum: number, i: CartItem) => sum + i.product.price * i.quantity, 0)

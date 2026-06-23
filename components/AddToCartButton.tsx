@@ -1,13 +1,14 @@
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ensureUser } from '@/lib/ensureUser'
 
 export default function AddToCartButton({ productId, farmId }: { productId: string, farmId: string }) {
   const [message, setMessage] = useState('')
 
   async function addToCart() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setMessage('Please login to add to cart'); return }
+    const user = await ensureUser().catch(() => null)
+    if (!user) { setMessage('Could not start your cart. Please try again.'); return }
 
     const { data: existing } = await supabase
       .from('cart_items')

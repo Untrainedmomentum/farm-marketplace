@@ -126,10 +126,21 @@ export default function Dashboard() {
           Logout
         </button>
       </div>
-      <p style={{ color: '#666', marginBottom: '1.5rem' }}>Logged in as: {user?.email}</p>
+      <p style={{ color: '#666', marginBottom: '1.5rem' }}>{user?.is_anonymous ? 'Browsing as a guest' : `Logged in as: ${user?.email}`}</p>
       {message && <p style={{ color: 'green', marginBottom: '1rem' }}>{message}</p>}
 
-      {!isFarmer && (
+      {!isFarmer && user?.is_anonymous && (
+        <div style={{ backgroundColor: 'white', border: '2px dashed #ccc', borderRadius: '8px', padding: '2rem', textAlign: 'center', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🌾</div>
+          <h2 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Want to sell on My Farm Express?</h2>
+          <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Create a free account first so buyers and Stripe can reach you.</p>
+          <a href="/auth/signup" style={{ display: 'inline-block', backgroundColor: 'var(--barn-red)', color: 'white', padding: '0.75rem 2rem', borderRadius: '4px', fontSize: '1rem', textDecoration: 'none' }}>
+            Create Account
+          </a>
+        </div>
+      )}
+
+      {!isFarmer && !user?.is_anonymous && (
         <div style={{ backgroundColor: 'white', border: '2px dashed #ccc', borderRadius: '8px', padding: '2rem', textAlign: 'center', maxWidth: '500px' }}>
           <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🌾</div>
           <h2 style={{ color: 'var(--barn-red)', marginBottom: '0.5rem' }}>Want to sell on My Farm Express?</h2>

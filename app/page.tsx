@@ -42,6 +42,22 @@ export default function Home() {
         </div>
       </div>
 
+      <div style={{ backgroundColor: '#FFFDF5', borderBottom: '1px solid #D4C5A9', borderTop: '1px solid #D4C5A9' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: '3.5rem 2rem', textAlign: 'center' }}>
+          <h2 style={{ color: '#8B1A1A', fontSize: '1.6rem', marginBottom: 16 }}>Why it matters where your food comes from</h2>
+          <p style={{ color: '#5D4E37', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 16 }}>
+            When you know the farm behind your food, you know how it was grown, who grew it, and how far it traveled to reach you.
+            That connection builds healthier communities, keeps farmland in local hands, and puts dollars back into the towns we live in
+            instead of a supply chain none of us can see.
+          </p>
+          <p style={{ color: '#5D4E37', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            We built My Farm Express because supporting local shouldn't cost more to run than it does to use. No subscriptions,
+            no hidden cuts — just a flat, transparent fee so small farms can actually afford to sell online and neighbors can
+            actually afford to buy local.
+          </p>
+        </div>
+      </div>
+
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4rem 2rem' }}>
         <h2 style={{ textAlign: 'center', color: '#8B1A1A', fontSize: '1.8rem', marginBottom: 8 }}>More than a directory</h2>
         <p style={{ textAlign: 'center', color: '#5D4E37', marginBottom: 40, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
